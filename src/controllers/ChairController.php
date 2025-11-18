@@ -498,8 +498,8 @@ class ChairController extends BaseController
 
             error_log("dashboard: Schedule distribution - " . $scheduleDistJson);
 
-                // FIXED: Get faculty workload data for chart
-                $workloadStmt = $this->db->prepare("
+            // FIXED: Get faculty workload data for chart
+            $workloadStmt = $this->db->prepare("
                 SELECT 
                     CONCAT(COALESCE(u.title, ''), ' ', u.first_name, ' ', u.last_name) AS faculty_name, 
                     COUNT(DISTINCT s.schedule_id) as course_count
@@ -557,7 +557,7 @@ class ChairController extends BaseController
             JOIN courses c ON s1.course_id = c.course_id
             WHERE c.department_id = ?
             " .
-            ($currentSemesterId ? "AND s1.semester_id = ?" : "")
+                    ($currentSemesterId ? "AND s1.semester_id = ?" : "")
             );
 
             $params = [$departmentId];
@@ -2606,7 +2606,7 @@ class ChairController extends BaseController
             );
             $relevantCourses = array_values($relevantCourses);
 
-            
+
 
             if (empty($matchingSections) || empty($relevantCourses)) {
                 error_log("generateSchedules: No sections or courses found for curriculum $curriculumId, semester {$currentSemester['semester_name']}");
@@ -4190,33 +4190,63 @@ class ChairController extends BaseController
     private function generateFlexibleTimeSlots($baseDuration = 1)
     {
         $slots = [];
-        $startTimes = [
+
+        // Morning slots only - all ending by 12:30 PM
+        $morningSlots = [
             '07:30:00',
             '08:00:00',
             '08:30:00',
             '09:00:00',
+            '09:30:00',
+            '10:00:00',
             '10:30:00',
-            '12:30:00',
-            '13:00:00',
-            '14:30:00',
-            '16:00:00',
-            '17:30:00' // Added more options
+            '11:00:00',
+            '11:30:00'
         ];
 
-        foreach ($startTimes as $start) {
+        // Afternoon slots ending by 5:30 PM
+        $afternoonSlots = [
+            '13:00:00',
+            '13:30:00',
+            '14:00:00',
+            '14:30:00',
+            '15:00:00',
+            '15:30:00',
+            '16:00:00',
+            '16:30:00'
+        ];
+
+        foreach ($morningSlots as $start) {
             $startTimestamp = strtotime($start);
 
-            $durations = [1, 1.5, 2]; // Focus on 1, 1.5, 2 hours
+            $durations = [1, 1.5, 2];
             foreach ($durations as $duration) {
                 $endTimestamp = $startTimestamp + ($duration * 3600);
                 $endTime = date('H:i:s', $endTimestamp);
 
-                if ($endTimestamp <= strtotime('19:00:00')) {
+                // Only add if it ends by 12:30 PM for morning
+                if ($endTimestamp <= strtotime('12:30:00')) {
                     $slots[] = [$start, $endTime, $duration];
                 }
             }
         }
 
+        foreach ($afternoonSlots as $start) {
+            $startTimestamp = strtotime($start);
+
+            $durations = [1, 1.5, 2];
+            foreach ($durations as $duration) {
+                $endTimestamp = $startTimestamp + ($duration * 3600);
+                $endTime = date('H:i:s', $endTimestamp);
+
+                // Only add if it ends by 5:30 PM for afternoon
+                if ($endTimestamp <= strtotime('17:30:00')) {
+                    $slots[] = [$start, $endTime, $duration];
+                }
+            }
+        }
+
+        error_log("✅ Generated " . count($slots) . " time slots ending by 5:30 PM");
         return $slots;
     }
 
@@ -6056,7 +6086,7 @@ class ChairController extends BaseController
 
             error_log("departmentTeachingLoad: Department ID: $departmentId, Name: $departmentName");
 
-        
+
             // Get all faculty in the department with their schedules
             $facultyStmt = $this->db->prepare("
             SELECT 
