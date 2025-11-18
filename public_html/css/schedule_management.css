@@ -1,0 +1,698 @@
+/* ========================================
+   CORE RESET AND BASE STYLES
+   ======================================== */
+
+* {
+  box-sizing: border-box;
+}
+
+.fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+.slide-in-left {
+  animation: slideInLeft 0.5s ease-in;
+}
+
+@keyframes slideInLeft {
+  from {
+    transform: translateX(-20px);
+    opacity: 0;
+  }
+
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ========================================
+   SCHEDULE GRID - FIXED LAYOUT
+   ======================================== */
+
+/* Main grid container - use block layout */
+#schedule-grid {
+  display: block;
+  width: 100%;
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+/* Each row is a flex container with 8 columns */
+#schedule-grid > div {
+  display: grid;
+  grid-template-columns: 120px repeat(7, 1fr);
+  min-height: 60px;
+  border-bottom: 1px solid #e5e7eb;
+  align-items: stretch;
+}
+
+#schedule-grid > div:last-child {
+  border-bottom: none;
+}
+
+/* ========================================
+   TIME CELL (First Column)
+   ======================================== */
+
+#schedule-grid > div > div:first-child {
+  padding: 12px 8px;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: #4b5563;
+  border-right: 2px solid #e5e7eb;
+  background: #f9fafb;
+  position: sticky;
+  left: 0;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  min-width: 120px;
+}
+
+/* Highlighted time cell when schedule starts */
+#schedule-grid > div > div:first-child.bg-blue-50 {
+  background: linear-gradient(to right, #dbeafe 0%, #eff6ff 100%) !important;
+  border-left: 4px solid #3b82f6 !important;
+  font-weight: 600;
+}
+
+#schedule-grid .bg-blue-50 .font-bold {
+  color: #1e40af;
+  font-size: 0.95rem;
+}
+
+#schedule-grid .bg-blue-50 .text-xs {
+  color: #3b82f6;
+  margin-top: 2px;
+}
+
+/* ========================================
+   DROP ZONES (Day Cells)
+   ======================================== */
+
+.drop-zone {
+  padding: 4px;
+  border-right: 1px solid #e5e7eb;
+  position: relative;
+  min-height: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-start;
+  align-items: stretch;
+  background: white;
+  transition: background-color 0.2s ease;
+}
+
+.drop-zone:last-child {
+  border-right: none;
+}
+
+.drop-zone:hover {
+  background-color: #f9fafb;
+}
+
+/* Drop zone during drag */
+.drop-zone.drag-over {
+  background-color: #fef3c7 !important;
+  border: 2px dashed #f59e0b !important;
+  border-right: 2px dashed #f59e0b !important;
+}
+
+.drop-zone.conflict {
+  background-color: #fee2e2 !important;
+  border: 2px dashed #dc2626 !important;
+}
+
+/* ========================================
+   SCHEDULE CARDS
+   ======================================== */
+
+.schedules-container {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  width: 100%;
+  height: 100%;
+  padding: 2px;
+}
+
+.schedule-card {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  padding: 8px;
+  border-radius: 6px;
+  border-left-width: 4px;
+  font-size: 0.75rem;
+  line-height: 1.3;
+  cursor: move;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  width: 100%;
+  box-sizing: border-box;
+  position: relative;
+  overflow: hidden;
+  background: white;
+}
+
+.schedule-card:hover {
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.15);
+  transform: translateY(-2px);
+  z-index: 20;
+}
+
+.schedule-card.dragging {
+  opacity: 0.5;
+  transform: scale(0.95) rotate(2deg);
+  cursor: grabbing;
+}
+
+/* Schedule card colors */
+.schedule-card.bg-blue-100 {
+  background-color: #dbeafe !important;
+  border-color: #3b82f6 !important;
+  color: #1e3a8a !important;
+}
+
+.schedule-card.bg-green-100 {
+  background-color: #d1fae5 !important;
+  border-color: #10b981 !important;
+  color: #065f46 !important;
+}
+
+.schedule-card.bg-purple-100 {
+  background-color: #e9d5ff !important;
+  border-color: #a855f7 !important;
+  color: #581c87 !important;
+}
+
+.schedule-card.bg-orange-100 {
+  background-color: #fed7aa !important;
+  border-color: #f97316 !important;
+  color: #7c2d12 !important;
+}
+
+.schedule-card.bg-pink-100 {
+  background-color: #fce7f3 !important;
+  border-color: #ec4899 !important;
+  color: #831843 !important;
+}
+
+.schedule-card.bg-teal-100 {
+  background-color: #ccfbf1 !important;
+  border-color: #14b8a6 !important;
+  color: #134e4a !important;
+}
+
+/* ========================================
+   SCHEDULE CARD CONTENT
+   ======================================== */
+
+.schedule-card .truncate {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
+}
+
+.schedule-card i {
+  margin-right: 4px;
+  flex-shrink: 0;
+  font-size: 0.7rem;
+}
+
+.schedule-card .font-bold {
+  font-weight: 700;
+  font-size: 0.8rem;
+}
+
+/* Duration badge */
+.schedule-card .bg-white.bg-opacity-70 {
+  background: rgba(255, 255, 255, 0.9) !important;
+  backdrop-filter: blur(4px);
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-weight: 900;
+  font-size: 10px;
+  white-space: nowrap;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+/* ========================================
+   ADD BUTTON (Empty Cells)
+   ======================================== */
+
+.drop-zone button {
+  width: 100%;
+  min-height: 50px;
+  color: #9ca3af;
+  background: transparent;
+  border: 2px dashed #e5e7eb;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.875rem;
+}
+
+.drop-zone button:hover {
+  color: #6b7280;
+  background-color: #fef3c7;
+  border-color: #fbbf24;
+}
+
+.drop-zone button i {
+  font-size: 1rem;
+}
+
+/* ========================================
+   RESPONSIVE DESIGN
+   ======================================== */
+
+@media (max-width: 1280px) {
+  #schedule-grid > div {
+    grid-template-columns: 100px repeat(7, 1fr);
+  }
+
+  #schedule-grid > div > div:first-child {
+    min-width: 100px;
+    font-size: 0.8rem;
+  }
+
+  .schedule-card {
+    font-size: 0.7rem;
+    padding: 6px;
+  }
+}
+
+@media (max-width: 1024px) {
+  #schedule-grid > div {
+    grid-template-columns: 90px repeat(7, minmax(90px, 1fr));
+  }
+
+  .schedule-card {
+    font-size: 0.65rem;
+    padding: 5px;
+  }
+}
+
+@media (max-width: 768px) {
+  #schedule-grid > div {
+    grid-template-columns: 80px repeat(7, minmax(80px, 1fr));
+  }
+
+  #schedule-grid > div > div:first-child {
+    min-width: 80px;
+    font-size: 0.7rem;
+    padding: 8px 4px;
+  }
+
+  .schedule-card {
+    font-size: 0.6rem;
+    padding: 4px;
+  }
+
+  .schedule-card i {
+    display: none; /* Hide icons on mobile */
+  }
+}
+
+/* ========================================
+   TOAST NOTIFICATIONS
+   ======================================== */
+
+#toast-container {
+  position: fixed;
+  top: 1rem;
+  right: 1rem;
+  z-index: 9999;
+  max-width: 28rem;
+  pointer-events: none;
+}
+
+.validation-toast,
+.completion-toast {
+  pointer-events: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(8px);
+  border-left: 4px solid rgba(255, 255, 255, 0.3);
+  animation: slideInRight 0.3s ease-out;
+  border-radius: 8px;
+  padding: 16px;
+  margin-bottom: 12px;
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+/* ========================================
+   MODAL STYLES
+   ======================================== */
+
+.modal-overlay {
+  background: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(8px);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  width: 100vw;
+  height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  z-index: 10000;
+}
+
+#schedule-modal.hidden {
+  display: none !important;
+}
+
+#schedule-modal:not(.hidden) {
+  display: flex !important;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+  max-width: 28rem;
+  width: 100%;
+  max-height: 90vh;
+  overflow-y: auto;
+}
+
+/* ========================================
+   LOADING OVERLAY
+   ======================================== */
+
+#loading-overlay {
+  backdrop-filter: blur(4px);
+  background: rgba(0, 0, 0, 0.6);
+  z-index: 9999;
+}
+
+.pulsing-loader {
+  width: 60px;
+  height: 60px;
+  border: 4px solid #f3f3f3;
+  border-top: 4px solid #f59e0b;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+/* ========================================
+   CONFLICT WARNINGS
+   ======================================== */
+
+.conflict-warning {
+  padding: 8px 12px;
+  border-radius: 6px;
+  margin-top: 4px;
+  font-size: 12px;
+  line-height: 1.4;
+  animation: slideDown 0.3s ease-out;
+}
+
+.conflict-warning.error {
+  background-color: #fef2f2;
+  border-left: 3px solid #ef4444;
+  color: #991b1b;
+}
+
+.conflict-warning.warning {
+  background-color: #fefce8;
+  border-left: 3px solid #eab308;
+  color: #854d0e;
+}
+
+.conflict-warning.success {
+  background-color: #f0fdf4;
+  border-left: 3px solid #22c55e;
+  color: #166534;
+}
+
+.conflict-warning.info {
+  background-color: #f0f9ff;
+  border-left: 3px solid #0ea5e9;
+  color: #0369a1;
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ========================================
+   PRINT STYLES
+   ======================================== */
+
+@media print {
+  .no-print {
+    display: none !important;
+  }
+
+  body {
+    background: white;
+    margin: 0;
+    padding: 0;
+  }
+
+  .schedule-card {
+    box-shadow: none;
+    border: 1px solid #374151;
+    page-break-inside: avoid;
+  }
+
+  #schedule-grid > div > div:first-child {
+    position: static;
+  }
+}
+
+/* ========================================
+   FULL SCREEN MODE
+   ======================================== */
+
+.fullscreen-mode .max-w-7xl {
+  max-width: none !important;
+  width: 100% !important;
+  height: 100vh !important;
+  margin: 0 !important;
+  padding: 0 !important;
+}
+
+.fullscreen-mode #content-manual,
+.fullscreen-mode #content-schedule {
+  height: 100vh;
+  overflow: auto;
+}
+
+/* ========================================
+   UTILITY CLASSES
+   ======================================== */
+
+.border-red-500 {
+  border-color: #ef4444 !important;
+}
+
+.bg-red-50 {
+  background-color: #fef2f2 !important;
+}
+
+.border-yellow-500 {
+  border-color: #eab308 !important;
+}
+
+.bg-yellow-50 {
+  background-color: #fefce8 !important;
+}
+
+/* Remove old conflicting styles */
+.schedule-grid,
+.grid-time-cell,
+.grid-day-cell {
+  /* These are now handled by the main grid styles above */
+}
+
+/* Smooth dragging animations */
+.schedule-card.draggable {
+  transition: transform 0.2s ease, opacity 0.2s ease, box-shadow 0.2s ease;
+  cursor: grab !important;
+}
+
+.schedule-card.draggable:active {
+  cursor: grabbing !important;
+}
+
+.schedule-card.dragging {
+  opacity: 0.5 !important;
+  transform: scale(0.95) !important;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2) !important;
+}
+
+/* Drop zone hover effects */
+.drop-zone {
+  transition: all 0.2s ease;
+  position: relative;
+}
+
+.drop-zone.drag-over {
+  background-color: rgba(251, 191, 36, 0.1) !important;
+  border: 2px dashed #fbbf24 !important;
+  transform: scale(1.02);
+}
+
+/* Conflict indicators */
+.drop-zone.conflict {
+  animation: pulse-conflict 0.5s ease-in-out;
+}
+
+.drop-zone.conflict-high {
+  background-color: rgba(239, 68, 68, 0.1) !important;
+  border: 2px solid #ef4444 !important;
+}
+
+.drop-zone.conflict-medium {
+  background-color: rgba(249, 115, 22, 0.1) !important;
+  border: 2px solid #f97316 !important;
+}
+
+.drop-zone.conflict-low {
+  background-color: rgba(234, 179, 8, 0.1) !important;
+  border: 2px solid #eab308 !important;
+}
+
+/* Conflict tooltip */
+.conflict-tooltip {
+  animation: fadeIn 0.2s ease;
+  pointer-events: none;
+  white-space: normal;
+  word-wrap: break-word;
+  max-width: 250px;
+  font-size: 11px;
+  line-height: 1.4;
+  z-index: 100;
+}
+
+.conflict-tooltip::before {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 20px;
+  width: 0;
+  height: 0;
+  border-left: 8px solid transparent;
+  border-right: 8px solid transparent;
+  border-top: 8px solid currentColor;
+}
+
+/* Loading indicator */
+.drop-loading-indicator {
+  animation: fadeIn 0.2s ease;
+  background: rgba(255, 255, 255, 0.9);
+  padding: 8px;
+  border-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulse-conflict {
+  0%, 100% {
+    transform: scale(1);
+  }
+  50% {
+    transform: scale(1.03);
+  }
+}
+
+/* Smooth grid updates */
+#schedule-grid {
+  transition: opacity 0.2s ease;
+}
+
+/* Add button hover effect */
+.drop-zone button {
+  transition: all 0.2s ease;
+}
+
+.drop-zone button:hover {
+  transform: scale(1.1);
+}
+
+/* Schedule card hover in grid */
+.schedule-card:not(.dragging):hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Prevent text selection during drag */
+.dragging * {
+  user-select: none;
+  -webkit-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+}
+
+/* Mobile optimization */
+@media (max-width: 768px) {
+  .conflict-tooltip {
+    font-size: 10px;
+    max-width: 200px;
+    padding: 6px;
+  }
+  
+  .schedule-card.dragging {
+    transform: scale(0.9) !important;
+  }
+}
