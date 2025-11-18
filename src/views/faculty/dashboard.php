@@ -20,7 +20,7 @@ ob_start();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    
+
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
     <style>
@@ -288,6 +288,176 @@ ob_start();
                     All systems operational
                 </p>
             </div>
+        </div>
+
+        <!-- Specializations Section -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+            <!-- Specializations Chart & Overview -->
+            <div class="glass-card rounded-2xl p-6 fade-in" style="animation-delay: 0.8s">
+                <div class="flex items-center justify-between mb-6">
+                    <div>
+                        <h3 class="text-xl font-bold text-gray-900 mb-2">Course Specializations</h3>
+                        <p class="text-sm text-gray-500 flex items-center gap-2">
+                            <i class="fas fa-star"></i>
+                            Your teaching expertise areas
+                        </p>
+                    </div>
+                    <a href="/faculty/profile#specializations"
+                        class="inline-flex items-center gap-2 text-yellow-600 hover:text-yellow-700 font-semibold text-sm transition">
+                        Manage
+                        <i class="fas fa-arrow-right"></i>
+                    </a>
+                </div>
+
+                <?php
+                // Safely check if specializations exist
+                $hasSpecializations = isset($hasSpecializations) ? $hasSpecializations : false;
+                $specializations = isset($specializations) ? $specializations : [];
+                $expertiseLevels = isset($expertiseLevels) ? $expertiseLevels : ['Beginner' => 0, 'Intermediate' => 0, 'Expert' => 0];
+                $departmentSpecializations = isset($departmentSpecializations) ? $departmentSpecializations : [];
+                ?>
+
+                <?php if (!$hasSpecializations): ?>
+                    <!-- Empty State - No Specializations -->
+                    <div class="text-center py-8">
+                        <div class="w-20 h-20 bg-gradient-to-br from-yellow-100 to-yellow-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-graduation-cap text-yellow-600 text-2xl"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-gray-900 mb-2">No Specializations Yet</h4>
+                        <p class="text-gray-500 mb-4">Add your course specializations to highlight your expertise areas.</p>
+                        <a href="/faculty/profile#specializations"
+                            class="inline-flex items-center gap-2 bg-yellow-500 hover:bg-yellow-600 text-white px-4 py-2 rounded-lg font-semibold transition">
+                            <i class="fas fa-plus"></i>
+                            Add Specialization
+                        </a>
+                    </div>
+                <?php else: ?>
+                    <!-- Specializations Content -->
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <!-- Expertise Level Chart -->
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-4">Expertise Level</h4>
+                            <div class="chart-container" style="height: 200px;">
+                                <canvas id="expertiseChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Department Distribution -->
+                        <div>
+                            <h4 class="text-sm font-semibold text-gray-600 uppercase tracking-wide mb-4">By Department</h4>
+                            <div class="chart-container" style="height: 200px;">
+                                <canvas id="departmentChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Quick Stats -->
+                    <div class="grid grid-cols-3 gap-4 mt-6 pt-6 border-t border-gray-100">
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-gray-900"><?php echo count($specializations); ?></div>
+                            <div class="text-xs text-gray-500 font-medium">Total</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-emerald-600"><?php echo isset($expertiseLevels['Expert']) ? $expertiseLevels['Expert'] : 0; ?></div>
+                            <div class="text-xs text-gray-500 font-medium">Expert Level</div>
+                        </div>
+                        <div class="text-center">
+                            <div class="text-2xl font-bold text-yellow-600"><?php echo count($departmentSpecializations); ?></div>
+                            <div class="text-xs text-gray-500 font-medium">Departments</div>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <!-- Recent Specializations List or Motivation Card -->
+            <?php if ($hasSpecializations): ?>
+                <div class="glass-card rounded-2xl overflow-hidden fade-in" style="animation-delay: 0.9s">
+                    <div class="p-6 border-b border-gray-200">
+                        <h3 class="text-xl font-bold text-gray-900 mb-1">Your Specializations</h3>
+                        <p class="text-sm text-gray-500">Recently added expertise areas</p>
+                    </div>
+
+                    <div class="max-h-80 overflow-y-auto">
+                        <?php foreach (array_slice($specializations, 0, 5) as $spec): ?>
+                            <div class="p-4 border-b border-gray-100 hover:bg-gray-50 transition">
+                                <div class="flex items-start justify-between mb-2">
+                                    <div class="flex-1">
+                                        <div class="flex items-center gap-2 mb-1">
+                                            <span class="text-sm font-bold text-gray-900">
+                                                <?php echo htmlspecialchars($spec['course_code'] ?? ''); ?>
+                                            </span>
+                                            <span class="text-xs text-gray-500">
+                                                <?php echo htmlspecialchars($spec['course_department'] ?? ''); ?>
+                                            </span>
+                                        </div>
+                                        <p class="text-sm text-gray-600 mb-2">
+                                            <?php echo htmlspecialchars($spec['course_name'] ?? ''); ?>
+                                        </p>
+                                    </div>
+                                    <?php
+                                    $badgeClass = [
+                                        'Beginner' => 'bg-blue-100 text-blue-700 border-blue-200',
+                                        'Intermediate' => 'bg-yellow-100 text-yellow-700 border-yellow-200',
+                                        'Expert' => 'bg-emerald-100 text-emerald-700 border-emerald-200'
+                                    ][$spec['expertise_level'] ?? 'Beginner'] ?? 'bg-gray-100 text-gray-700 border-gray-200';
+                                    ?>
+                                    <span class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium border <?php echo $badgeClass; ?>">
+                                        <?php echo htmlspecialchars($spec['expertise_level'] ?? 'Beginner'); ?>
+                                    </span>
+                                </div>
+                                <div class="flex items-center justify-between text-xs text-gray-500">
+                                    <span>Expertise Area</span>
+                                    <a href="/faculty/profile#specializations" class="text-yellow-600 hover:text-yellow-700 font-medium">
+                                        Edit
+                                    </a>
+                                </div>
+                            </div>
+                        <?php endforeach; ?>
+
+                        <?php if (count($specializations) > 5): ?>
+                            <div class="p-4 text-center">
+                                <a href="/faculty/profile#specializations"
+                                    class="text-yellow-600 hover:text-yellow-700 font-semibold text-sm inline-flex items-center gap-1">
+                                    View all <?php echo count($specializations); ?> specializations
+                                    <i class="fas fa-arrow-right"></i>
+                                </a>
+                            </div>
+                        <?php endif; ?>
+                    </div>
+                </div>
+            <?php else: ?>
+                <!-- Motivation Card when no specializations -->
+                <div class="glass-card rounded-2xl p-6 fade-in" style="animation-delay: 0.9s">
+                    <div class="text-center">
+                        <div class="w-16 h-16 bg-gradient-to-br from-purple-100 to-purple-200 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                            <i class="fas fa-lightbulb text-purple-600 text-2xl"></i>
+                        </div>
+                        <h4 class="text-lg font-bold text-gray-900 mb-2">Boost Your Profile</h4>
+                        <p class="text-gray-500 mb-4">
+                            Adding specializations helps the system match you with courses that fit your expertise and improves scheduling accuracy.
+                        </p>
+                        <div class="space-y-3 text-left">
+                            <div class="flex items-center gap-3 text-sm text-gray-600">
+                                <i class="fas fa-check-circle text-emerald-500"></i>
+                                <span>Get matched with preferred courses</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-sm text-gray-600">
+                                <i class="fas fa-check-circle text-emerald-500"></i>
+                                <span>Highlight your expertise to administrators</span>
+                            </div>
+                            <div class="flex items-center gap-3 text-sm text-gray-600">
+                                <i class="fas fa-check-circle text-emerald-500"></i>
+                                <span>Improve course assignment accuracy</span>
+                            </div>
+                        </div>
+                        <a href="/faculty/profile#specializations"
+                            class="mt-4 inline-flex items-center gap-2 bg-gradient-to-r from-purple-500 to-purple-600 hover:from-purple-600 hover:to-purple-700 text-white px-6 py-3 rounded-xl font-semibold transition">
+                            <i class="fas fa-plus"></i>
+                            Add Your First Specialization
+                        </a>
+                    </div>
+                </div>
+            <?php endif; ?>
         </div>
 
         <!-- Charts and Actions -->
@@ -600,6 +770,89 @@ ob_start();
                 }
             });
         });
+        // Specialization Charts
+        <?php if (isset($hasSpecializations) && $hasSpecializations): ?>
+            // Expertise Level Chart
+            const expertiseCtx = document.getElementById('expertiseChart').getContext('2d');
+            new Chart(expertiseCtx, {
+                type: 'doughnut',
+                data: {
+                    labels: <?php echo isset($expertiseLabels) ? $expertiseLabels : '[]'; ?>,
+                    datasets: [{
+                        data: <?php echo isset($expertiseData) ? $expertiseData : '[0,0,0]'; ?>,
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.8)', // Beginner - Blue
+                            'rgba(245, 158, 11, 0.8)', // Intermediate - Yellow
+                            'rgba(16, 185, 129, 0.8)' // Expert - Green
+                        ],
+                        borderColor: [
+                            'rgb(59, 130, 246)',
+                            'rgb(245, 158, 11)',
+                            'rgb(16, 185, 129)'
+                        ],
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Department Distribution Chart
+            const deptCtx = document.getElementById('departmentChart').getContext('2d');
+            new Chart(deptCtx, {
+                type: 'pie',
+                data: {
+                    labels: <?php echo isset($departmentLabels) ? $departmentLabels : '[]'; ?>,
+                    datasets: [{
+                        data: <?php echo isset($departmentData) ? $departmentData : '[]'; ?>,
+                        backgroundColor: [
+                            'rgba(139, 92, 246, 0.8)',
+                            'rgba(236, 72, 153, 0.8)',
+                            'rgba(249, 115, 22, 0.8)',
+                            'rgba(14, 165, 233, 0.8)',
+                            'rgba(20, 184, 166, 0.8)'
+                        ],
+                        borderColor: [
+                            'rgb(139, 92, 246)',
+                            'rgb(236, 72, 153)',
+                            'rgb(249, 115, 22)',
+                            'rgb(14, 165, 233)',
+                            'rgb(20, 184, 166)'
+                        ],
+                        borderWidth: 2,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'bottom',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        }
+                    }
+                }
+            });
+        <?php endif; ?>
     </script>
 </body>
 
