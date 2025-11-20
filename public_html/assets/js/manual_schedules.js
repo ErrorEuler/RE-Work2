@@ -856,11 +856,12 @@ function safeUpdateScheduleDisplay(schedules) {
     console.log(`🔍 Final button count: ${finalButtons.length}`);
   }, 2000);
 
-  // Initialize empty slot buttons after grid is rendered
+  // Then initialize alignment
   setTimeout(() => {
+    initializeGridAlignment();
+    initializeDragAndDrop();
     initializeEmptySlotButtons();
-    initializeDragAndDrop(); // Make sure drag & drop also works
-  }, 300);
+  }, 100);
 }
 
 function generateDynamicTimeSlotsFromSchedules(schedules) {
@@ -933,12 +934,12 @@ function createScheduleCardSpanning(schedule, rowSpan, isManual) {
   const colorClass = colors[colorIndex];
 
   const card = document.createElement("div");
-  card.className = `schedule-card ${colorClass} p-3 rounded-lg border-l-4 ${isManual ? "draggable cursor-move" : ""
-    } text-xs shadow-sm`;
+  card.className = `schedule-card ${colorClass} p-2 rounded-lg border-l-4 ${isManual ? "draggable cursor-move" : ""
+    } text-xs shadow-sm hover:shadow-md transition-all duration-200`;
 
-  // Calculate exact height based on row span
-  // Each slot is 60px, multiply by rowSpan, then subtract small amount for proper fit
-  const calculatedHeight = rowSpan * 60 - 6;
+  // Calculate height based on row span with better spacing
+  const baseSlotHeight = 65; // Increased from 60px for better readability
+  const calculatedHeight = Math.max(rowSpan * baseSlotHeight - 8, baseSlotHeight);
 
   card.style.height = `${calculatedHeight}px`;
   card.style.minHeight = `${calculatedHeight}px`;
@@ -946,6 +947,7 @@ function createScheduleCardSpanning(schedule, rowSpan, isManual) {
   card.style.flexDirection = "column";
   card.style.justifyContent = "space-between";
   card.style.overflow = "hidden";
+  card.style.position = "relative";
 
   if (isManual) {
     card.draggable = true;
@@ -962,51 +964,63 @@ function createScheduleCardSpanning(schedule, rowSpan, isManual) {
     ? formatTime(schedule.end_time.substring(0, 5))
     : "";
 
+  // Enhanced HTML structure with better text handling
   card.innerHTML = `
-    <div>
-      ${isManual
+        <div class="flex-1 overflow-hidden">
+            ${isManual
       ? `
-        <div class="flex justify-between items-start mb-2">
-          <div class="font-bold truncate flex-1 text-sm">
-            ${escapeHtml(schedule.course_code) || ""}
-          </div>
-          <div class="flex space-x-1 flex-shrink-0 ml-2 no-print">
-            <button onclick="editSchedule('${schedule.schedule_id || ""}')" 
-                    class="text-yellow-600 hover:text-yellow-700 transition-colors">
-              <i class="fas fa-edit"></i>
-            </button>
-            <button onclick="openDeleteSingleModal('${schedule.schedule_id || ""
+                <div class="flex justify-between items-start mb-1">
+                    <div class="font-bold text-xs truncate flex-1 pr-2" title="${escapeHtml(schedule.course_code) || ''}">
+                        ${escapeHtml(schedule.course_code) || ""}
+                    </div>
+                    <div class="flex space-x-1 flex-shrink-0 ml-1 no-print">
+                        <button onclick="event.stopPropagation(); editSchedule('${schedule.schedule_id || ""}')" 
+                                class="text-yellow-600 hover:text-yellow-700 transition-colors p-1 rounded hover:bg-yellow-100"
+                                title="Edit schedule">
+                            <i class="fas fa-edit text-xs"></i>
+                        </button>
+                        <button onclick="event.stopPropagation(); openDeleteSingleModal('${schedule.schedule_id || ""
       }', '${escapeHtml(schedule.course_code) || ""}', '${escapeHtml(schedule.section_name) || ""
       }', '${escapeHtml(schedule.day_of_week) || ""
       }', '${startTime}', '${endTime}')" 
-                    class="text-red-600 hover:text-red-700 transition-colors">
-              <i class="fas fa-trash"></i>
-            </button>
-          </div>
-        </div>
-      `
+                                class="text-red-600 hover:text-red-700 transition-colors p-1 rounded hover:bg-red-100"
+                                title="Delete schedule">
+                            <i class="fas fa-trash text-xs"></i>
+                        </button>
+                    </div>
+                </div>
+            `
       : `
-        <div class="font-bold text-sm truncate">
-          ${escapeHtml(schedule.course_code) || ""}
-        </div>
-      `
+                <div class="font-bold text-xs truncate mb-1" title="${escapeHtml(schedule.course_code) || ''}">
+                    ${escapeHtml(schedule.course_code) || ""}
+                </div>
+            `
     }
-      <div class="space-y-1">
-        <div class="text-xs opacity-90 truncate">
-          ${escapeHtml(schedule.section_name) || ""}
+            
+            <div class="space-y-0.5 overflow-hidden">
+                <div class="text-xs opacity-90 truncate leading-tight" title="${escapeHtml(schedule.section_name) || ''}">
+                    <i class="fas fa-users mr-1 text-xs"></i>${escapeHtml(schedule.section_name) || ""}
+                </div>
+                <div class="text-xs opacity-75 truncate leading-tight" title="${escapeHtml(schedule.faculty_name) || ''}">
+                    <i class="fas fa-chalkboard-teacher mr-1 text-xs"></i>${escapeHtml(schedule.faculty_name) || ""}
+                </div>
+                <div class="text-xs opacity-75 truncate leading-tight" title="${escapeHtml(schedule.room_name) || 'Online'}">
+                    <i class="fas fa-door-open mr-1 text-xs"></i>${escapeHtml(schedule.room_name) || "Online"}
+                </div>
+            </div>
         </div>
-        <div class="text-xs opacity-75 truncate">
-          ${escapeHtml(schedule.faculty_name) || ""}
+        
+        <div class="mt-1 pt-1 border-t border-current border-opacity-20">
+            <div class="text-xs font-semibold text-center truncate leading-tight">
+                ${startTime} - ${endTime}
+            </div>
+            ${rowSpan > 1 ? `
+                <div class="text-[10px] text-center opacity-75 mt-0.5">
+                    ${calculateDurationDisplay(schedule.start_time, schedule.end_time)}
+                </div>
+            ` : ''}
         </div>
-        <div class="text-xs opacity-75 truncate">
-          ${escapeHtml(schedule.room_name) || "Online"}
-        </div>
-      </div>
-    </div>
-    <div class="text-xs font-semibold border-t border-current border-opacity-20 pt-1 mt-1">
-      ${startTime} - ${endTime}
-    </div>
-  `;
+    `;
 
   if (isManual) {
     card.ondragstart = handleDragStart;
@@ -1400,14 +1414,10 @@ function calculateScheduleRowSpan(scheduleStart, scheduleEnd) {
   const endMin = toMinutes(scheduleEnd);
   const durationMin = endMin - startMin;
 
-  // Each row represents 30 minutes
-  const rowSpan = Math.ceil(durationMin / 30);
+  // Each row represents 30 minutes, ensure minimum 1 row
+  const rowSpan = Math.max(1, Math.ceil(durationMin / 30));
 
-  console.log(
-    `Schedule ${scheduleStart}-${scheduleEnd}: ${durationMin} mins = ${rowSpan} rows`
-  );
-
-  return Math.max(1, rowSpan);
+  return rowSpan;
 }
 
 function calculateRowSpan(startTime, endTime) {
@@ -2094,6 +2104,31 @@ document.addEventListener('click', function (e) {
     });
   }
 });
+
+function initializeGridAlignment() {
+  const gridHeader = document.getElementById('grid-header');
+  const scheduleGrid = document.getElementById('schedule-grid');
+
+  if (!gridHeader || !scheduleGrid) return;
+
+  // Ensure both header and grid use the same column structure
+  const headerColumns = gridHeader.querySelectorAll('div');
+  const firstGridRow = scheduleGrid.querySelector('.grid-cols-8');
+
+  if (headerColumns.length === 8 && firstGridRow) {
+    // Force consistent column widths
+    gridHeader.style.gridTemplateColumns = 'minmax(120px, 1fr) repeat(7, minmax(0, 1fr))';
+    firstGridRow.style.gridTemplateColumns = 'minmax(120px, 1fr) repeat(7, minmax(0, 1fr))';
+  }
+
+  // Sync scroll positions
+  const container = scheduleGrid.closest('.overflow-x-auto');
+  if (container) {
+    container.addEventListener('scroll', function () {
+      gridHeader.style.transform = `translateX(-${this.scrollLeft}px)`;
+    });
+  }
+}
 
 // ============================================
 // GLOBAL EXPORTS

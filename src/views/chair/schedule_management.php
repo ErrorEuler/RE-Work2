@@ -475,7 +475,8 @@ if ($userDepartmentId) {
                                             <div class="px-1 py-1 border-r border-gray-200 last:border-r-0 relative drop-zone min-h-[<?php echo $minHeight; ?>px]"
                                                 data-day="<?php echo $day; ?>"
                                                 data-start-time="<?php echo $time[0]; ?>"
-                                                data-end-time="<?php echo $time[1]; ?>">
+                                                data-end-time="<?php echo $time[1]; ?>"
+                                                style="min-height: <?php echo $minHeight; ?>px">
 
                                                 <?php
                                                 $schedulesInSlot = [];
@@ -502,11 +503,12 @@ if ($userDepartmentId) {
                                                 ?>
 
                                                 <?php if (empty($schedulesInSlot)): ?>
-                                                    <button class="w-full h-full text-gray-400 hover:text-gray-600 hover:bg-yellow-50 rounded-lg border-2 border-dashed border-gray-300 hover:border-yellow-400 transition-all duration-200 no-print flex items-center justify-center p-1" style="min-height: <?php echo $minHeight; ?>px">
-                                                        <i class="fas fa-plus text-xs"></i>
+                                                    <button class="w-full h-full text-gray-400 hover:text-gray-600 hover:bg-yellow-50 rounded-lg border-2 border-dashed border-gray-300 hover:border-yellow-400 transition-all duration-200 no-print flex items-center justify-center p-2"
+                                                        style="min-height: <?php echo $minHeight - 8; ?>px">
+                                                        <i class="fas fa-plus text-sm"></i>
                                                     </button>
                                                 <?php else: ?>
-                                                    <div class="space-y-1 p-1">
+                                                    <div class="h-full flex flex-col gap-1 p-1 overflow-hidden">
                                                         <?php foreach ($schedulesInSlot as $scheduleData):
                                                             $schedule = $scheduleData['schedule'];
                                                             $isStartCell = $scheduleData['isStartCell'];
@@ -524,7 +526,7 @@ if ($userDepartmentId) {
                                                             $colorIndex = $schedule['schedule_id'] ? ($schedule['schedule_id'] % count($colors)) : array_rand($colors);
                                                             $colorClass = $colors[$colorIndex];
                                                         ?>
-                                                            <div class="schedule-card <?php echo $colorClass; ?> p-2 rounded-lg border-l-4 draggable cursor-move text-xs"
+                                                            <div class="schedule-card <?php echo $colorClass; ?> p-2 rounded-lg border-l-4 draggable cursor-move text-xs flex flex-col justify-between hover:shadow-md transition-all"
                                                                 draggable="true"
                                                                 data-schedule-id="<?php echo $schedule['schedule_id']; ?>"
                                                                 data-year-level="<?php echo htmlspecialchars($schedule['year_level']); ?>"
@@ -534,8 +536,9 @@ if ($userDepartmentId) {
                                                                 data-course-code="<?php echo htmlspecialchars($schedule['course_code']); ?>"
                                                                 data-original-day="<?php echo htmlspecialchars($schedule['day_of_week']); ?>"
                                                                 data-original-start="<?php echo substr($schedule['start_time'], 0, 5); ?>"
-                                                                data-original-end="<?php echo substr($schedule['end_time'], 0, 5); ?>">
-                                                                style="<?php echo !$isStartCell ? 'opacity: 0.6;' : ''; ?>">
+                                                                data-original-end="<?php echo substr($schedule['end_time'], 0, 5); ?>"
+                                                                style="<?php echo !$isStartCell ? 'opacity: 0.7;' : '';
+                                                                        echo 'height: ' . ($minHeight - 12) . 'px;'; ?>">
 
                                                                 <?php if ($isStartCell): ?>
                                                                     <div class="flex justify-between items-start mb-1">
@@ -545,16 +548,17 @@ if ($userDepartmentId) {
                                                                         <div class="flex space-x-1 flex-shrink-0 ml-1">
                                                                             <button onclick="editSchedule('<?php echo $schedule['schedule_id']; ?>')" class="text-yellow-600 hover:text-yellow-700 no-print">
                                                                                 <i class="fas fa-edit text-xs"></i>
-                                                                                <button onclick="console.log('Delete clicked - Schedule ID:', <?php echo $schedule['schedule_id'] ?? 'null'; ?>); openDeleteSingleModal(
-                                                                                        <?php echo $schedule['schedule_id'] ?? 'null'; ?>, 
-                                                                                        '<?php echo htmlspecialchars($schedule['course_code'] ?? ''); ?>', 
-                                                                                        '<?php echo htmlspecialchars($schedule['section_name'] ?? ''); ?>', 
-                                                                                        '<?php echo htmlspecialchars($schedule['day_of_week'] ?? ''); ?>', 
-                                                                                        '<?php echo isset($schedule['start_time']) ? date('g:i A', strtotime($schedule['start_time'])) : ''; ?>', 
-                                                                                        '<?php echo isset($schedule['end_time']) ? date('g:i A', strtotime($schedule['end_time'])) : ''; ?>'
-                                                                                    )" class="text-red-600 hover:text-red-700 no-print">
-                                                                                    <i class="fas fa-trash text-xs"></i>
-                                                                                </button>
+                                                                            </button>
+                                                                            <button onclick="console.log('Delete clicked - Schedule ID:', <?php echo $schedule['schedule_id'] ?? 'null'; ?>); openDeleteSingleModal(
+                                            <?php echo $schedule['schedule_id'] ?? 'null'; ?>, 
+                                            '<?php echo htmlspecialchars($schedule['course_code'] ?? ''); ?>', 
+                                            '<?php echo htmlspecialchars($schedule['section_name'] ?? ''); ?>', 
+                                            '<?php echo htmlspecialchars($schedule['day_of_week'] ?? ''); ?>', 
+                                            '<?php echo isset($schedule['start_time']) ? date('g:i A', strtotime($schedule['start_time'])) : ''; ?>', 
+                                            '<?php echo isset($schedule['end_time']) ? date('g:i A', strtotime($schedule['end_time'])) : ''; ?>'
+                                        )" class="text-red-600 hover:text-red-700 no-print">
+                                                                                <i class="fas fa-trash text-xs"></i>
+                                                                            </button>
                                                                         </div>
                                                                     </div>
                                                                 <?php else: ?>
