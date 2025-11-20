@@ -16,6 +16,10 @@ let validationCache = new Map();
 let lastValidationTime = 0;
 const VALIDATION_THROTTLE = 500;
 
+console.log("📊 Initial schedule data:", window.scheduleData);
+console.log("🏫 Faculty data:", window.faculty);
+console.log("🎯 Current semester:", window.currentSemester);
+
 // ============================================
 // DRAG AND DROP HANDLERS
 // ============================================
@@ -413,16 +417,23 @@ function initializeDragAndDrop() {
 // MODAL & FORM HANDLING
 // ============================================
 function openAddModal() {
+  console.log("🟢 openAddModal called");
+
   buildCurrentSemesterCourseMappings();
 
   const form = document.getElementById("schedule-form");
-  if (form) form.reset();
+  if (form) {
+    form.reset();
+    console.log("✅ Form reset");
+  }
 
   resetConflictField("course-code");
   resetConflictField("course-name");
 
   document.getElementById("modal-title").textContent = "Add Schedule";
   document.getElementById("schedule-id").value = "";
+
+  // Set default values
   document.getElementById("modal-day").value = "Monday";
   document.getElementById("day-select").value = "Monday";
   document.getElementById("start-time").value = "07:30";
@@ -442,21 +453,95 @@ function openAddModal() {
         facultySelect.appendChild(option);
       });
     }
+    console.log("✅ Faculty dropdown populated");
   }
 
   resetSectionFilter();
   currentEditingId = null;
+
+  // Show the modal
   showModal();
 }
 
 function openAddModalForSlot(day, startTime, endTime) {
+  console.log("🟢 openAddModalForSlot CALLED with:", { day, startTime, endTime });
+
+  // Check if modal exists
+  const modal = document.getElementById("schedule-modal");
+  if (!modal) {
+    console.error("❌ schedule-modal element not found!");
+    return;
+  }
+  console.log("✅ Modal element found");
+
+  // Reset and open the modal first
   openAddModal();
-  document.getElementById("modal-day").value = day;
-  document.getElementById("day-select").value = day;
-  document.getElementById("start-time").value = startTime;
-  updateEndTimeOptions();
-  document.getElementById("end-time").value = endTime;
-  updateTimeFields();
+
+  console.log("✅ openAddModal completed");
+
+  // Set the slot-specific values after a short delay to ensure DOM is ready
+  setTimeout(() => {
+    console.log("🟡 Setting slot values...");
+
+    // Set day
+    const modalDay = document.getElementById("modal-day");
+    const daySelect = document.getElementById("day-select");
+
+    if (modalDay && daySelect) {
+      modalDay.value = day;
+      daySelect.value = day;
+      console.log("✅ Day set to:", day);
+    } else {
+      console.error("❌ Day elements not found");
+    }
+
+    // Set start time
+    const startTimeSelect = document.getElementById("start-time");
+    if (startTimeSelect) {
+      startTimeSelect.value = startTime;
+      console.log("✅ Start time set to:", startTime);
+
+      // Trigger change event to update end time options
+      startTimeSelect.dispatchEvent(new Event('change'));
+    } else {
+      console.error("❌ Start time element not found");
+    }
+
+    // Set end time after options are populated
+    setTimeout(() => {
+      const endTimeSelect = document.getElementById("end-time");
+      if (endTimeSelect) {
+        // Try to find and select the exact end time
+        let found = false;
+        for (let option of endTimeSelect.options) {
+          if (option.value === endTime) {
+            endTimeSelect.value = endTime;
+            found = true;
+            console.log("✅ End time set to:", endTime);
+            break;
+          }
+        }
+
+        if (!found) {
+          console.warn("⚠️ Exact end time not found, using default");
+          // Select the first available option that makes sense
+          if (endTimeSelect.options.length > 1) {
+            endTimeSelect.selectedIndex = 1; // Usually the first real option
+          }
+        }
+      } else {
+        console.error("❌ End time element not found");
+      }
+
+      // Update hidden fields
+      updateTimeFields();
+      updateDayField();
+
+      console.log("✅ All slot values set successfully");
+
+    }, 150);
+
+  }, 200);
 }
 
 function editSchedule(scheduleId) {
@@ -530,6 +615,14 @@ function showModal() {
   if (modal) {
     modal.classList.remove("hidden");
     modal.classList.add("flex");
+    console.log("✅ Modal shown - removed hidden, added flex");
+
+    // Force a reflow and ensure visibility
+    modal.style.display = 'flex';
+    modal.style.visibility = 'visible';
+    modal.style.opacity = '1';
+  } else {
+    console.error("❌ Modal element not found!");
   }
 }
 
@@ -585,7 +678,7 @@ function handleScheduleSubmit(e) {
       if (result.success) {
         closeModal();
         resetConflictStyles();
-        
+
         if (result.schedules && result.schedules.length > 0) {
           result.schedules.forEach(schedule => {
             if (currentEditingId) {
@@ -758,7 +851,7 @@ function confirmDeleteSingleSchedule() {
 // ============================================
 function safeUpdateScheduleDisplay(schedules) {
   if (!schedules || !Array.isArray(schedules)) schedules = [];
-  
+
   window.scheduleData = schedules;
 
   const manualGrid = document.getElementById("schedule-grid");
@@ -766,6 +859,26 @@ function safeUpdateScheduleDisplay(schedules) {
 
   const viewGrid = document.getElementById("timetableGrid");
   if (viewGrid) updateViewGrid(schedules);
+
+    // Force initialize empty slot buttons with multiple attempts
+  setTimeout(() => {
+    console.log("🟡 Initializing empty slot buttons attempt 1...");
+    initializeEmptySlotButtons();
+  }, 100);
+  
+  setTimeout(() => {
+    console.log("🟡 Initializing empty slot buttons attempt 2...");
+    initializeEmptySlotButtons();
+  }, 1000);
+  
+  setTimeout(() => {
+    console.log("🟡 Initializing empty slot buttons attempt 3...");
+    initializeEmptySlotButtons();
+    
+    // Final check
+    const finalButtons = document.querySelectorAll('.empty-slot-btn');
+    console.log(`🔍 Final button count: ${finalButtons.length}`);
+  }, 2000);
 }
 
 function generateDynamicTimeSlotsFromSchedules(schedules) {
@@ -838,9 +951,8 @@ function createScheduleCardSpanning(schedule, rowSpan, isManual) {
   const colorClass = colors[colorIndex];
 
   const card = document.createElement("div");
-  card.className = `schedule-card ${colorClass} p-3 rounded-lg border-l-4 ${
-    isManual ? "draggable cursor-move" : ""
-  } text-xs shadow-sm`;
+  card.className = `schedule-card ${colorClass} p-3 rounded-lg border-l-4 ${isManual ? "draggable cursor-move" : ""
+    } text-xs shadow-sm`;
 
   // Calculate exact height based on row span
   // Each slot is 60px, multiply by rowSpan, then subtract small amount for proper fit
@@ -870,9 +982,8 @@ function createScheduleCardSpanning(schedule, rowSpan, isManual) {
 
   card.innerHTML = `
     <div>
-      ${
-        isManual
-          ? `
+      ${isManual
+      ? `
         <div class="flex justify-between items-start mb-2">
           <div class="font-bold truncate flex-1 text-sm">
             ${escapeHtml(schedule.course_code) || ""}
@@ -882,25 +993,22 @@ function createScheduleCardSpanning(schedule, rowSpan, isManual) {
                     class="text-yellow-600 hover:text-yellow-700 transition-colors">
               <i class="fas fa-edit"></i>
             </button>
-            <button onclick="openDeleteSingleModal('${
-              schedule.schedule_id || ""
-            }', '${escapeHtml(schedule.course_code) || ""}', '${
-              escapeHtml(schedule.section_name) || ""
-            }', '${
-              escapeHtml(schedule.day_of_week) || ""
-            }', '${startTime}', '${endTime}')" 
+            <button onclick="openDeleteSingleModal('${schedule.schedule_id || ""
+      }', '${escapeHtml(schedule.course_code) || ""}', '${escapeHtml(schedule.section_name) || ""
+      }', '${escapeHtml(schedule.day_of_week) || ""
+      }', '${startTime}', '${endTime}')" 
                     class="text-red-600 hover:text-red-700 transition-colors">
               <i class="fas fa-trash"></i>
             </button>
           </div>
         </div>
       `
-          : `
+      : `
         <div class="font-bold text-sm truncate">
           ${escapeHtml(schedule.course_code) || ""}
         </div>
       `
-      }
+    }
       <div class="space-y-1">
         <div class="text-xs opacity-90 truncate">
           ${escapeHtml(schedule.section_name) || ""}
@@ -947,10 +1055,10 @@ function updateManualGrid(schedules) {
   schedules.forEach(schedule => {
     const day = schedule.day_of_week;
     const start = schedule.start_time ? schedule.start_time.substring(0, 5) : "";
-    
+
     if (!scheduleLookup[day]) scheduleLookup[day] = {};
     if (!scheduleLookup[day][start]) scheduleLookup[day][start] = [];
-    
+
     scheduleLookup[day][start].push(schedule);
   });
 
@@ -966,7 +1074,7 @@ function updateManualGrid(schedules) {
     // Check if ANY schedule starts at this time slot
     let hasScheduleStarting = false;
     let sampleSchedule = null;
-    
+
     days.forEach(day => {
       if (scheduleLookup[day] && scheduleLookup[day][slotStart] && scheduleLookup[day][slotStart].length > 0) {
         hasScheduleStarting = true;
@@ -980,7 +1088,7 @@ function updateManualGrid(schedules) {
     const timeCell = document.createElement("div");
     timeCell.className = "border-r border-gray-200 sticky left-0 z-10 flex items-center justify-center";
     timeCell.style.minHeight = "60px";
-    
+
     if (hasScheduleStarting && sampleSchedule) {
       const schedEnd = sampleSchedule.end_time.substring(0, 5);
       timeCell.className += " bg-blue-50 border-l-4 border-blue-500";
@@ -995,7 +1103,7 @@ function updateManualGrid(schedules) {
       timeCell.className += " bg-gray-50";
       timeCell.innerHTML = `<span class="text-[10px] text-gray-300">${formatTime(slotStart)}</span>`;
     }
-    
+
     row.appendChild(timeCell);
 
     // DAY CELLS
@@ -1044,7 +1152,7 @@ function updateManualGrid(schedules) {
         cell.appendChild(addButton);
       } else {
         cell.className += " p-1";
-        
+
         schedulesStartingHere.forEach(({ schedule, rowSpan }) => {
           const scheduleCard = createScheduleCardSpanning(schedule, rowSpan, true);
           cell.appendChild(scheduleCard);
@@ -1075,14 +1183,14 @@ function updateViewGrid(schedules) {
 
   const occupiedCells = new Set();
   const scheduleLookup = {};
-  
+
   schedules.forEach(schedule => {
     const day = schedule.day_of_week;
     const start = schedule.start_time ? schedule.start_time.substring(0, 5) : "";
-    
+
     if (!scheduleLookup[day]) scheduleLookup[day] = {};
     if (!scheduleLookup[day][start]) scheduleLookup[day][start] = [];
-    
+
     scheduleLookup[day][start].push(schedule);
   });
 
@@ -1093,7 +1201,7 @@ function updateViewGrid(schedules) {
 
     let hasScheduleStarting = false;
     let sampleSchedule = null;
-    
+
     days.forEach(day => {
       if (scheduleLookup[day] && scheduleLookup[day][time[0]] && scheduleLookup[day][time[0]].length > 0) {
         hasScheduleStarting = true;
@@ -1106,7 +1214,7 @@ function updateViewGrid(schedules) {
     const timeCell = document.createElement("div");
     timeCell.className = "border-r border-gray-200 flex items-center justify-center";
     timeCell.style.minHeight = "60px";
-    
+
     if (hasScheduleStarting && sampleSchedule) {
       const schedEnd = sampleSchedule.end_time.substring(0, 5);
       timeCell.className += " bg-blue-50 border-l-4 border-blue-500";
@@ -1181,9 +1289,8 @@ function createScheduleCard(schedule, rowSpan, isManual) {
   const colorClass = colors[colorIndex];
 
   const card = document.createElement("div");
-  card.className = `schedule-card ${colorClass} p-2 rounded-lg border-l-4 ${
-    isManual ? "draggable cursor-move" : ""
-  } text-xs mb-1`;
+  card.className = `schedule-card ${colorClass} p-2 rounded-lg border-l-4 ${isManual ? "draggable cursor-move" : ""
+    } text-xs mb-1`;
 
   // Calculate minimum height based on row span (60px per 30-minute slot)
   const minHeight = rowSpan * 60;
@@ -1213,52 +1320,42 @@ function createScheduleCard(schedule, rowSpan, isManual) {
   );
 
   card.innerHTML = `
-    ${
-      isManual
-        ? `
+    ${isManual
+      ? `
       <div class="flex justify-between items-start mb-1">
-        <div class="font-bold text-sm truncate flex-1">${
-          escapeHtml(schedule.course_code) || ""
-        }</div>
+        <div class="font-bold text-sm truncate flex-1">${escapeHtml(schedule.course_code) || ""
+      }</div>
         <div class="flex space-x-1 flex-shrink-0 ml-1">
-          <button onclick="editSchedule('${
-            schedule.schedule_id || ""
-          }')" class="text-yellow-600 hover:text-yellow-700 no-print">
+          <button onclick="editSchedule('${schedule.schedule_id || ""
+      }')" class="text-yellow-600 hover:text-yellow-700 no-print">
             <i class="fas fa-edit text-xs"></i>
           </button>
-          <button onclick="openDeleteSingleModal('${
-            schedule.schedule_id || ""
-          }', '${escapeHtml(schedule.course_code) || ""}', '${
-            escapeHtml(schedule.section_name) || ""
-          }', '${
-            escapeHtml(schedule.day_of_week) || ""
-          }', '${startTime}', '${endTime}')" class="text-red-600 hover:text-red-700 no-print">
+          <button onclick="openDeleteSingleModal('${schedule.schedule_id || ""
+      }', '${escapeHtml(schedule.course_code) || ""}', '${escapeHtml(schedule.section_name) || ""
+      }', '${escapeHtml(schedule.day_of_week) || ""
+      }', '${startTime}', '${endTime}')" class="text-red-600 hover:text-red-700 no-print">
             <i class="fas fa-trash text-xs"></i>
           </button>
         </div>
       </div>
     `
-        : `
-      <div class="font-bold text-sm truncate mb-1">${
-        escapeHtml(schedule.course_code) || ""
+      : `
+      <div class="font-bold text-sm truncate mb-1">${escapeHtml(schedule.course_code) || ""
       }</div>
     `
     }
     <div class="flex-1">
       <div class="text-xs opacity-90 truncate mb-1">
-        <i class="fas fa-users mr-1"></i>${
-          escapeHtml(schedule.section_name) || ""
-        }
+        <i class="fas fa-users mr-1"></i>${escapeHtml(schedule.section_name) || ""
+    }
       </div>
       <div class="text-xs opacity-75 truncate mb-1">
-        <i class="fas fa-chalkboard-teacher mr-1"></i>${
-          escapeHtml(schedule.faculty_name) || ""
-        }
+        <i class="fas fa-chalkboard-teacher mr-1"></i>${escapeHtml(schedule.faculty_name) || ""
+    }
       </div>
       <div class="text-xs opacity-75 truncate mb-1">
-        <i class="fas fa-door-open mr-1"></i>${
-          escapeHtml(schedule.room_name) || "Online"
-        }
+        <i class="fas fa-door-open mr-1"></i>${escapeHtml(schedule.room_name) || "Online"
+    }
       </div>
     </div>
     <div class="border-t border-gray-300 pt-1 mt-1">
@@ -1416,7 +1513,7 @@ function showNotification(message, type = "success", duration = 5000) {
 // ============================================
 function buildCurrentSemesterCourseMappings() {
   currentSemesterCourses = {};
-  
+
   if (window.curriculumCourses && window.curriculumCourses.length > 0) {
     window.curriculumCourses.forEach(course => {
       if (course.course_code && course.course_name) {
@@ -1879,6 +1976,19 @@ document.addEventListener("DOMContentLoaded", function () {
       closeModal();
     }
   });
+
+  setTimeout(() => {
+    const emptySlotButtons = document.querySelectorAll('button[onclick*="openAddModalForSlot"]');
+    console.log(`🔍 Found ${emptySlotButtons.length} empty slot buttons`);
+
+    emptySlotButtons.forEach((btn, index) => {
+      btn.addEventListener('click', function (e) {
+        console.log(`🟢 Empty slot button ${index + 1} clicked`);
+        console.log('Button onclick:', btn.getAttribute('onclick'));
+      });
+    });
+  }, 1000);
+
 });
 
 // ============================================
@@ -1954,6 +2064,102 @@ document.addEventListener("DOMContentLoaded", function () {
     }
   };
 })();
+
+function initializeEmptySlotButtons() {
+  console.log("🟢 Initializing empty slot buttons...");
+
+  // Method 1: Query all possible empty slot buttons
+  const emptySlotButtons = document.querySelectorAll('.empty-slot-btn, button[onclick*="openAddModalForSlot"], .drop-zone button');
+  console.log(`🔍 Found ${emptySlotButtons.length} potential empty slot buttons`);
+
+  if (emptySlotButtons.length === 0) {
+    console.warn("⚠️ No empty slot buttons found, trying alternative selectors...");
+
+    // Alternative selector - look for buttons with plus icons
+    const plusButtons = document.querySelectorAll('button:has(.fa-plus)');
+    console.log(`🔍 Found ${plusButtons.length} buttons with plus icons`);
+
+    plusButtons.forEach(btn => {
+      if (!btn.onclick) {
+        btn.classList.add('empty-slot-btn');
+        console.log("✅ Added empty-slot-btn class to:", btn);
+      }
+    });
+  }
+
+  emptySlotButtons.forEach((button, index) => {
+    console.log(`Button ${index}:`, {
+      classes: button.className,
+      onclick: button.getAttribute('onclick'),
+      visible: button.offsetParent !== null,
+      position: button.getBoundingClientRect()
+    });
+
+    // Remove any existing listeners by cloning
+    const newButton = button.cloneNode(true);
+    button.parentNode.replaceChild(newButton, button);
+
+    // Add fresh click listener
+    newButton.addEventListener('click', function (e) {
+      e.preventDefault();
+      e.stopPropagation();
+      console.log("🟢 Empty slot button CLICKED via event listener");
+
+      // Get slot data from attributes or parse onclick
+      let day, startTime, endTime;
+
+      if (this.getAttribute('data-day')) {
+        day = this.getAttribute('data-day');
+        startTime = this.getAttribute('data-start');
+        endTime = this.getAttribute('data-end');
+      } else {
+        // Parse from onclick attribute
+        const onclick = this.getAttribute('onclick') || '';
+        const match = onclick.match(/openAddModalForSlot\('([^']+)', '([^']+)', '([^']+)'\)/);
+        if (match) {
+          day = match[1];
+          startTime = match[2];
+          endTime = match[3];
+        }
+      }
+
+      console.log("📅 Slot data:", { day, startTime, endTime });
+
+      if (day && startTime && endTime) {
+        openAddModalForSlot(day, startTime, endTime);
+      } else {
+        console.error("❌ Could not extract slot data, opening default modal");
+        openAddModal();
+      }
+    });
+
+    // Make sure the button is clickable
+    newButton.style.pointerEvents = 'auto';
+    newButton.style.zIndex = '10';
+    newButton.style.position = 'relative';
+  });
+
+  console.log("✅ Empty slot buttons initialization complete");
+}
+
+// Global click handler for debugging
+document.addEventListener('click', function (e) {
+  const button = e.target.closest('button');
+  if (button && (button.classList.contains('empty-slot-btn') || button.innerHTML.includes('fa-plus'))) {
+    console.log("🌐 GLOBAL CLICK HANDLER: Empty slot button clicked");
+    console.log("Button:", button);
+    console.log("Event target:", e.target);
+
+    // Check if button is actually clickable
+    const rect = button.getBoundingClientRect();
+    console.log("Button visibility check:", {
+      visible: rect.width > 0 && rect.height > 0,
+      display: window.getComputedStyle(button).display,
+      pointerEvents: window.getComputedStyle(button).pointerEvents,
+      opacity: window.getComputedStyle(button).opacity
+    });
+  }
+});
 
 // ============================================
 // GLOBAL EXPORTS
