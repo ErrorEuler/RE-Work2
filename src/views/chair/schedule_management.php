@@ -502,13 +502,7 @@ if ($userDepartmentId) {
                                                 ?>
 
                                                 <?php if (empty($schedulesInSlot)): ?>
-                                                    <button type="button"
-                                                        data-day="<?php echo $day; ?>"
-                                                        data-start="<?php echo $time[0]; ?>"
-                                                        data-end="<?php echo $time[1]; ?>"
-                                                        class="empty-slot-btn w-full h-full text-gray-400 hover:text-gray-600 hover:bg-yellow-50 rounded-lg border-2 border-dashed border-gray-300 hover:border-yellow-400 transition-all duration-200 no-print flex items-center justify-center p-1 min-h-[<?php echo $minHeight; ?>px]"
-                                                        style="pointer-events: auto; z-index: 10; position: relative;"
-                                                        onclick="console.log('PHP onclick fired'); window.openAddModalForSlot('<?php echo $day; ?>', '<?php echo $time[0]; ?>', '<?php echo $time[1]; ?>')">
+                                                    <button class="w-full h-full text-gray-400 hover:text-gray-600 hover:bg-yellow-50 rounded-lg border-2 border-dashed border-gray-300 hover:border-yellow-400 transition-all duration-200 no-print flex items-center justify-center p-1" style="min-height: <?php echo $minHeight; ?>px">
                                                         <i class="fas fa-plus text-xs"></i>
                                                     </button>
                                                 <?php else: ?>

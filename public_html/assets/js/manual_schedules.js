@@ -464,84 +464,60 @@ function openAddModal() {
 }
 
 function openAddModalForSlot(day, startTime, endTime) {
-  console.log("🟢 openAddModalForSlot CALLED with:", { day, startTime, endTime });
+  console.log("📅 Opening modal for slot:", { day, startTime, endTime });
 
-  // Check if modal exists
-  const modal = document.getElementById("schedule-modal");
-  if (!modal) {
-    console.error("❌ schedule-modal element not found!");
-    return;
-  }
-  console.log("✅ Modal element found");
-
-  // Reset and open the modal first
+  // First open the modal with default values
   openAddModal();
 
-  console.log("✅ openAddModal completed");
-
-  // Set the slot-specific values after a short delay to ensure DOM is ready
+  // Set the specific slot values after modal is ready
   setTimeout(() => {
-    console.log("🟡 Setting slot values...");
-
     // Set day
     const modalDay = document.getElementById("modal-day");
     const daySelect = document.getElementById("day-select");
-
     if (modalDay && daySelect) {
       modalDay.value = day;
       daySelect.value = day;
-      console.log("✅ Day set to:", day);
-    } else {
-      console.error("❌ Day elements not found");
     }
 
-    // Set start time
+    // Set start time and trigger change to update end time options
     const startTimeSelect = document.getElementById("start-time");
     if (startTimeSelect) {
       startTimeSelect.value = startTime;
-      console.log("✅ Start time set to:", startTime);
-
-      // Trigger change event to update end time options
       startTimeSelect.dispatchEvent(new Event('change'));
-    } else {
-      console.error("❌ Start time element not found");
     }
 
     // Set end time after options are populated
     setTimeout(() => {
       const endTimeSelect = document.getElementById("end-time");
       if (endTimeSelect) {
-        // Try to find and select the exact end time
+        // Try to find exact match first
         let found = false;
         for (let option of endTimeSelect.options) {
           if (option.value === endTime) {
             endTimeSelect.value = endTime;
             found = true;
-            console.log("✅ End time set to:", endTime);
             break;
           }
         }
 
+        // If exact match not found, find closest match
         if (!found) {
-          console.warn("⚠️ Exact end time not found, using default");
-          // Select the first available option that makes sense
-          if (endTimeSelect.options.length > 1) {
-            endTimeSelect.selectedIndex = 1; // Usually the first real option
+          for (let option of endTimeSelect.options) {
+            if (option.value && option.value > startTime) {
+              endTimeSelect.value = option.value;
+              break;
+            }
           }
         }
-      } else {
-        console.error("❌ End time element not found");
       }
 
       // Update hidden fields
       updateTimeFields();
       updateDayField();
 
-      console.log("✅ All slot values set successfully");
-
-    }, 150);
-
-  }, 200);
+      console.log("✅ Slot values set successfully");
+    }, 200);
+  }, 100);
 }
 
 function editSchedule(scheduleId) {
@@ -860,25 +836,31 @@ function safeUpdateScheduleDisplay(schedules) {
   const viewGrid = document.getElementById("timetableGrid");
   if (viewGrid) updateViewGrid(schedules);
 
-    // Force initialize empty slot buttons with multiple attempts
+  // Force initialize empty slot buttons with multiple attempts
   setTimeout(() => {
     console.log("🟡 Initializing empty slot buttons attempt 1...");
     initializeEmptySlotButtons();
   }, 100);
-  
+
   setTimeout(() => {
     console.log("🟡 Initializing empty slot buttons attempt 2...");
     initializeEmptySlotButtons();
   }, 1000);
-  
+
   setTimeout(() => {
     console.log("🟡 Initializing empty slot buttons attempt 3...");
     initializeEmptySlotButtons();
-    
+
     // Final check
     const finalButtons = document.querySelectorAll('.empty-slot-btn');
     console.log(`🔍 Final button count: ${finalButtons.length}`);
   }, 2000);
+
+  // Initialize empty slot buttons after grid is rendered
+  setTimeout(() => {
+    initializeEmptySlotButtons();
+    initializeDragAndDrop(); // Make sure drag & drop also works
+  }, 300);
 }
 
 function generateDynamicTimeSlotsFromSchedules(schedules) {
@@ -2066,80 +2048,32 @@ document.addEventListener("DOMContentLoaded", function () {
 })();
 
 function initializeEmptySlotButtons() {
-  console.log("🟢 Initializing empty slot buttons...");
+  const emptySlotButtons = document.querySelectorAll('.drop-zone button:has(.fa-plus)');
 
-  // Method 1: Query all possible empty slot buttons
-  const emptySlotButtons = document.querySelectorAll('.empty-slot-btn, button[onclick*="openAddModalForSlot"], .drop-zone button');
-  console.log(`🔍 Found ${emptySlotButtons.length} potential empty slot buttons`);
+  emptySlotButtons.forEach((button) => {
+    button.classList.add('empty-slot-btn');
 
-  if (emptySlotButtons.length === 0) {
-    console.warn("⚠️ No empty slot buttons found, trying alternative selectors...");
+    const dropZone = button.closest('.drop-zone');
+    if (dropZone) {
+      button.setAttribute('data-day', dropZone.dataset.day);
+      button.setAttribute('data-start', dropZone.dataset.startTime);
+      button.setAttribute('data-end', dropZone.dataset.endTime);
+    }
 
-    // Alternative selector - look for buttons with plus icons
-    const plusButtons = document.querySelectorAll('button:has(.fa-plus)');
-    console.log(`🔍 Found ${plusButtons.length} buttons with plus icons`);
-
-    plusButtons.forEach(btn => {
-      if (!btn.onclick) {
-        btn.classList.add('empty-slot-btn');
-        console.log("✅ Added empty-slot-btn class to:", btn);
-      }
-    });
-  }
-
-  emptySlotButtons.forEach((button, index) => {
-    console.log(`Button ${index}:`, {
-      classes: button.className,
-      onclick: button.getAttribute('onclick'),
-      visible: button.offsetParent !== null,
-      position: button.getBoundingClientRect()
-    });
-
-    // Remove any existing listeners by cloning
     const newButton = button.cloneNode(true);
     button.parentNode.replaceChild(newButton, button);
 
-    // Add fresh click listener
     newButton.addEventListener('click', function (e) {
       e.preventDefault();
       e.stopPropagation();
-      console.log("🟢 Empty slot button CLICKED via event listener");
 
-      // Get slot data from attributes or parse onclick
-      let day, startTime, endTime;
-
-      if (this.getAttribute('data-day')) {
-        day = this.getAttribute('data-day');
-        startTime = this.getAttribute('data-start');
-        endTime = this.getAttribute('data-end');
-      } else {
-        // Parse from onclick attribute
-        const onclick = this.getAttribute('onclick') || '';
-        const match = onclick.match(/openAddModalForSlot\('([^']+)', '([^']+)', '([^']+)'\)/);
-        if (match) {
-          day = match[1];
-          startTime = match[2];
-          endTime = match[3];
-        }
-      }
-
-      console.log("📅 Slot data:", { day, startTime, endTime });
-
-      if (day && startTime && endTime) {
-        openAddModalForSlot(day, startTime, endTime);
-      } else {
-        console.error("❌ Could not extract slot data, opening default modal");
-        openAddModal();
-      }
+      openAddModalForSlot(
+        this.getAttribute('data-day'),
+        this.getAttribute('data-start'),
+        this.getAttribute('data-end')
+      );
     });
-
-    // Make sure the button is clickable
-    newButton.style.pointerEvents = 'auto';
-    newButton.style.zIndex = '10';
-    newButton.style.position = 'relative';
   });
-
-  console.log("✅ Empty slot buttons initialization complete");
 }
 
 // Global click handler for debugging
